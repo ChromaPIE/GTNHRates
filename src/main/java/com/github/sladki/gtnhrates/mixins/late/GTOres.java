@@ -2,14 +2,14 @@ package com.github.sladki.gtnhrates.mixins.late;
 
 import java.util.ArrayList;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.item.ItemBlock;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,55 +18,57 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import com.github.sladki.gtnhrates.ModConfig;
 import com.github.sladki.gtnhrates.Utils;
 
-import bartworks.system.material.BWTileEntityMetaGeneratedOre;
+import bartworks.system.material.BWMetaGeneratedOres;
 import gregtech.api.GregTechAPI;
 import gregtech.api.enums.Materials;
-import gregtech.api.items.GTGenericBlock;
-import gregtech.common.blocks.BlockOresAbstract;
-import gregtech.common.blocks.TileEntityOres;
+import gregtech.common.blocks.GTBlockOre;
 
-@Mixin(value = BlockOresAbstract.class, remap = false)
-public abstract class GTOres extends GTGenericBlock {
+@Mixin(value = GTBlockOre.class, remap = false)
+public abstract class GTOres extends Block {
 
     @Unique
-    public short SMALL_ORES_META_START = 16000;
+    private static final int gtnhrates$SMALL_ORE_META_OFFSET = 16000;
+
+    protected GTOres(Material materialIn) {
+        super(materialIn);
+    }
 
     @Inject(method = "getDrops", at = @At(value = "RETURN"), cancellable = true)
-    private void onGetDrops(World aWorld, int aX, int aY, int aZ, int aMeta, int aFortune,
+    private void gtnhrates$onGetDrops(World world, int x, int y, int z, int metadata, int fortune,
         CallbackInfoReturnable<ArrayList<ItemStack>> cir) {
-        short oreMeta = 0;
-        TileEntity tTileEntity = aWorld.getTileEntity(aX, aY, aZ);
-        if ((tTileEntity instanceof TileEntityOres)) {
-            oreMeta = ((TileEntityOres) tTileEntity).mMetaData;
-        } else if (BlockOresAbstract.mTemporaryTileEntity.get() != null) {
-            oreMeta = BlockOresAbstract.mTemporaryTileEntity.get().mMetaData;
+
+        EntityPlayer harvester = this.harvesters.get();
+        boolean doSilktouch = harvester != null && EnchantmentHelper.getSilkTouchModifier(harvester);
+
+        if (doSilktouch && metadata < gtnhrates$SMALL_ORE_META_OFFSET) {
+            return;
         }
-        if (TileEntityOresAccessor.getShouldSilkTouch()) {
-            if (oreMeta < SMALL_ORES_META_START) {
-                return;
-            }
-        }
+
         float mult = ModConfig.Rates.gtOresDrops;
-        // COAL
-        if (GregTechAPI.sGeneratedMaterials[(oreMeta % 1000)] == Materials.Coal) {
+
+        Materials material = GregTechAPI.sGeneratedMaterials[metadata % 1000];
+        if (material == Materials.Coal) {
             mult = ModConfig.Rates.gtCoalOreDrops;
         }
+
         cir.setReturnValue(Utils.multiplyItemStacksSize(cir.getReturnValue(), mult));
     }
 
-    protected GTOres(Class<? extends ItemBlock> aItemClass, String aName, Material aMaterial) {
-        super(aItemClass, aName, aMaterial);
-    }
+    @Mixin(value = BWMetaGeneratedOres.class, remap = false)
+    public abstract static class Bartworks extends Block {
 
-    @Mixin(value = BWTileEntityMetaGeneratedOre.class, remap = false)
-    public abstract static class Bartworks {
-
-        @Shadow
-        protected static boolean shouldSilkTouch;
+        protected Bartworks(Material materialIn) {
+            super(materialIn);
+        }
 
         @Inject(method = "getDrops", at = @At(value = "RETURN"), cancellable = true)
-        private void onGetDrops(int aFortune, CallbackInfoReturnable<ArrayList<ItemStack>> cir) {
-            if (!shouldSilkTouch) {
+        private void gtnhrates$onGetDrops(World world, int x, int y, int z, int metadata, int fortune,
+            CallbackInfoReturnable<ArrayList<ItemStack>> cir) {
+
+            EntityPlayer harvester = this.harvesters.get();
+            boolean doSilktouch = harvester != null && EnchantmentHelper.getSilkTouchModifier(harvester);
+
+            if (!doSilktouch) {
                 cir.setReturnValue(Utils.multiplyItemStacksSize(cir.getReturnValue(), ModConfig.Rates.gtOresDrops));
             }
         }

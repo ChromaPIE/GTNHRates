@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -25,8 +24,7 @@ import gregtech.api.items.MetaBaseItem;
 import gregtech.api.objects.ItemData;
 import gregtech.api.util.GTOreDictUnificator;
 import gregtech.api.util.GTUtility;
-import gregtech.common.blocks.BlockOresAbstract;
-import gregtech.common.blocks.TileEntityOres;
+import gregtech.common.blocks.GTBlockOre;
 import gregtech.common.items.behaviors.BehaviourProspecting;
 
 @Mixin(value = BehaviourProspecting.class, remap = false)
@@ -49,14 +47,11 @@ public abstract class GTHammerProspecting {
             .getAllInBox(aX - radius, aY - radius, aZ - radius, aX + radius, aY + radius, aZ + radius)) {
             Block block = aWorld.getBlock(blockPos.getX(), blockPos.getY(), blockPos.getZ());
 
-            if (block instanceof BlockOresAbstract) {
-                TileEntity tileEntity = aWorld.getTileEntity(blockPos.getX(), blockPos.getY(), blockPos.getZ());
-                if (tileEntity instanceof TileEntityOres) {
-                    Materials material = GregTechAPI.sGeneratedMaterials[((TileEntityOres) tileEntity).mMetaData
-                        % 1000];
-                    if (material != null && material != Materials._NULL) {
-                        oresFound.add(material.mDefaultLocalName);
-                    }
+            if (block instanceof GTBlockOre) {
+                int metadata = aWorld.getBlockMetadata(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+                Materials material = GregTechAPI.sGeneratedMaterials[metadata % 1000];
+                if (material != null && material != Materials._NULL) {
+                    oresFound.add(material.mDefaultLocalName);
                 }
             } else {
                 int metadata = aWorld.getBlockMetadata(blockPos.getX(), blockPos.getY(), blockPos.getZ());
