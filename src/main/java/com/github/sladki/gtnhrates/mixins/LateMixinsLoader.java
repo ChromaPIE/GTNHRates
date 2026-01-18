@@ -5,7 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import com.github.sladki.gtnhrates.ModConfig;
 import com.github.sladki.gtnhrates.mixins.late.NEIBookmarksContents;
+import com.github.sladki.gtnhrates.mixins.late.Quests;
+import com.gtnewhorizon.gtnhlib.config.ConfigException;
+import com.gtnewhorizon.gtnhlib.config.ConfigurationManager;
 import com.gtnewhorizon.gtnhmixins.ILateMixinLoader;
 import com.gtnewhorizon.gtnhmixins.LateMixin;
 
@@ -19,6 +23,12 @@ public class LateMixinsLoader implements ILateMixinLoader {
 
     @Override
     public List<String> getMixins(Set<String> loadedMods) {
+        // Because the config loads too late
+        try {
+            ConfigurationManager.registerConfig(ModConfig.Rates.class);
+        } catch (ConfigException e) {
+            throw new RuntimeException(e);
+        }
         List<String> mixinsToLoad = new ArrayList<>(
             Arrays.asList(
                 "NaturaCrops",
@@ -39,6 +49,7 @@ public class LateMixinsLoader implements ILateMixinLoader {
                 "GTHammerProspecting",
                 "GTItemHolderCover"));
         mixinsToLoad.addAll(NEIBookmarksContents.mixins());
+        mixinsToLoad.addAll(Quests.mixins());
         if (loadedMods.contains("HungerOverhaul")) {
             mixinsToLoad.add("HungerOverhaulCrops");
         }
