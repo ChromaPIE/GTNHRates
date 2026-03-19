@@ -10,10 +10,35 @@ import com.gtnewhorizon.gtnhlib.config.SimpleGuiFactory;
 
 public class ModConfig {
 
-    protected static Class<?>[] configClasses = { Rates.class };
+    protected static Class<?>[] configClasses = { Rates.class, NEI.class, Misc.class };
 
-    @Config(modid = "gtnhrates")
-    static public class Rates {
+    @Config(modid = GTNHRates.MODID, category = "nei")
+    public static class NEI {
+
+        @Config.Comment("[Requires restart] NEI bookmarks table of content: lists bookmarks namespaces on the first namespace and allows to alias searches")
+        @Config.DefaultBoolean(true)
+        public static boolean enableNEIBookmarksContents;
+
+        @Config.Comment("Prevents listed items recipes to be included in recipe trees")
+        @Config.DefaultBoolean(true)
+        public static boolean enableIngredientsRecipesBlacklist;
+
+        @Config.Comment("Prevents listed items recipes to be included in recipe trees. Checks for id (substring) -> oredict (exact) -> name (exact) as collected with NEI hotkeys")
+        @Config.DefaultStringList({ "logWood", "Cobblestone", "gregtech:gt.metatool.01" })
+        public static String[] ingredientsRecipesBlacklist;
+
+        @Config.Comment("Allows autocrafting in Crafting Station to use nearby inventories (slots are hidden).")
+        @Config.DefaultBoolean(true)
+        public static boolean enableTCCraftingStationAdjacentInventoriesSearch;
+
+        @Config.Comment("The 'nearby' inventories distance")
+        @Config.RangeInt(min = 1, max = 228)
+        public static int enableTCCraftingStationAdjacentInventoriesSearchRadius = 2;
+
+    }
+
+    @Config(modid = GTNHRates.MODID, category = "misc")
+    public static class Misc {
 
         @Config.Comment("Automatically open Item Holder covers inventories all at once, and disable shift clicking")
         @Config.DefaultBoolean(true)
@@ -34,6 +59,18 @@ public class ModConfig {
         @Config.Comment("Growth overhaul minimum time to mature (in seconds)")
         @Config.RangeInt(min = 1)
         public static int cropsTimeToMature = 5 * 60;
+
+        @Config.Comment("New quests")
+        @Config.DefaultBoolean(true)
+        public static boolean enableNewQuests;
+
+        @Config.Comment("Singleblock Miners stacking up to 4 blocks")
+        @Config.DefaultBoolean(true)
+        public static boolean enableMinerStacking;
+    }
+
+    @Config(modid = "gtnhrates")
+    static public class Rates {
 
         @Config.Comment("Vanilla (and derivatives) and Natura crops yield rate")
         @Config.RangeFloat(min = 0.1F, max = 64F)
@@ -75,13 +112,13 @@ public class ModConfig {
         @Config.RangeFloat(min = 0.1F, max = 64F)
         public static float ic2RubberTreeResinYield = 4F;
 
-        @Config.Comment("[Requires restart] NEI bookmarks table of content: lists bookmarks namespaces on the first namespace and allows to alias searches")
-        @Config.DefaultBoolean(true)
-        public static boolean enableNEIBookmarksContents;
+        @Config.Comment("The list of 'recipe category:value' pairs for more control. Pairs with invalid or outside of [0.1;64] range values are ignored. Exact categories strings are checked first, then substring after the last '.'. Set the first entry to 'print' to print all categories to the log (after loading to the main menu).")
+        @Config.DefaultStringList({ "!print", "primitiveblastfurnace:228", "gt.recipe.lathe:0" })
+        public static String[] gtRecipesPerCategoryEnergyDiscount;
 
-        @Config.Comment("New quests")
-        @Config.DefaultBoolean(true)
-        public static boolean enableNewQuests;
+        @Config.Comment("IC2 Rubber Tree saplings drop chance (1/35 by default) multiplier")
+        @Config.RangeFloat(min = 0.1F, max = 64F)
+        public static float ic2RubberTreeSaplingsDropChanceMultiplier = 2F;
     }
 
     protected static void registerConfigClasses() {
