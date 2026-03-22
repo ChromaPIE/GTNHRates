@@ -13,7 +13,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
     name = "GTNH Rates",
     acceptedMinecraftVersions = "[1.7.10]",
     dependencies = "required-after:gtnhlib",
-    guiFactory = "com.github.sladki.gtnhrates.ModConfig")
+    guiFactory = "com.github.sladki.gtnhrates.ModConfig$GUIFactory")
 public class GTNHRates {
 
     public static final String MODID = "gtnhrates";
