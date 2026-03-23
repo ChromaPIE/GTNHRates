@@ -1,0 +1,46 @@
+name: Delete dev and sources jars
+
+on:
+  workflow_run:
+    workflows: ["Release tagged build"]
+    types:
+      - completed
+
+jobs:
+  remove-jars:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Delete -dev.jar and -sources.jar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.event.workflow_run.head_branch }}
+        shell: bash
+        run: |
+          echo "Fetching assets for release: $TAG"
+
+          # 1. List all assets for this specific tag
+          # 2. Filter for names ending in -dev.jar OR -sources.jar
+          # 3. Extract only the 'id' of those assets
+          ASSET_IDS=$(gh release view "$TAG" --repo "$REPO" --json assets \
+            --jq '.assets[] | select(.name | test("-dev\\.jar$|-sources\\.jar$")) | .id')
+
+          if [ -z "$ASSET_IDS" ]; then
+            echo "No matching *-dev.jar or *-sources.jar files found. Nothing to delete."
+            exit 0
+          fi
+
+          echo "Found the following Asset IDs to delete:"
+          echo "$ASSET_IDS"
+
+          # Loop through each ID and delete it via the API
+          for ID in $ASSET_IDS; do
+            echo "Deleting asset ID: $ID"
+            gh api --method DELETE repos/$REPO/releases/assets/$ID
+          done
+
+          echo "Cleanup successful!"

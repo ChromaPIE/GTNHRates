@@ -34,6 +34,20 @@ public class EventsHandler {
         }
     }
 
+    public float discountForCategory(Map<String, Float> categoriesDiscountMap, String category) {
+        // exact category string
+        Float discount = categoriesDiscountMap.get(category);
+        // suffix
+        if (discount == null) {
+            int lastDot = category.lastIndexOf('.');
+            if (lastDot != -1 && lastDot < category.length() - 1) {
+                String suffix = category.substring(lastDot + 1);
+                discount = categoriesDiscountMap.get(suffix);
+            }
+        }
+        return discount != null ? discount : ModConfig.Rates.gtRecipesEnergyDiscount;
+    }
+
     private void modifyRecipesDuration() {
         // Some preparations
         boolean toPrintCategory = Arrays.stream(ModConfig.Rates.gtRecipesPerCategoryEnergyDiscount)
@@ -65,23 +79,24 @@ public class EventsHandler {
                 GTNHRates.LOG.info(category);
             }
 
-            // exact
-            Float discount = categoriesDiscountMap.get(category);
-            // suffix
-            if (discount == null) {
-                int lastDot = category.lastIndexOf('.');
-                if (lastDot != -1 && lastDot < category.length() - 1) {
-                    String suffix = category.substring(lastDot + 1);
-                    discount = categoriesDiscountMap.get(suffix);
-                }
-            }
-
-            discount = discount != null ? discount : ModConfig.Rates.gtRecipesEnergyDiscount;
+            float discount = discountForCategory(categoriesDiscountMap, category);
             for (GTRecipe recipe : entry.getValue()
                 .getAllRecipes()) {
                 if (recipe.mDuration > 0) {
                     recipe.mDuration = applyRate(recipe.mDuration, discount);
                 }
+            }
+        }
+
+        // Assembly Line recipes have special needs, stick to recipe categories to avoid mismatch with NEI
+        float processDiscount = discountForCategory(categoriesDiscountMap, "gt.recipe.fakeAssemblylineProcess");
+        float researchDiscount = discountForCategory(categoriesDiscountMap, "gt.recipe.scanner");
+        for (GTRecipe.RecipeAssemblyLine recipe : GTRecipe.RecipeAssemblyLine.sAssemblylineRecipes) {
+            if (recipe.mDuration > 0) {
+                recipe.mDuration = applyRate(recipe.mDuration, processDiscount);
+            }
+            if (recipe.mResearchTime > 0) {
+                recipe.mResearchTime = applyRate(recipe.mResearchTime, researchDiscount);
             }
         }
     }
